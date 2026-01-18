@@ -11,11 +11,11 @@ fi
 
 echo ""
 echo "🛑 Stopping and removing all containers..."
-docker compose -f docker-compose.yml down
+docker compose -f docker-compose.yml --env-file .env.minio-hosted down
 
 echo ""
 echo "🗑️  Removing all volumes (this will delete all stored data)..."
-docker compose -f docker-compose.yml down -v
+docker compose -f docker-compose.yml --env-file .env.minio-hosted down -v
 
 echo ""
 echo "🔨 Rebuilding and starting containers..."

@@ -8,13 +8,11 @@ services:
       - "9000:9000" # S3 API
       - "9001:9001" # Console UI
     environment:
-      # Change these in production!
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-your_access_key}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-your_secret_key}
-      # Set this to your domain for console redirect
-      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_URL:-http://localhost:9001}
-      # Optional: Set server URL for proper presigned URLs
-      MINIO_SERVER_URL: ${MINIO_SERVER_URL:-http://localhost:9000}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # IMPORTANT: Set these to your public domain URLs
+      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_URL}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -25,7 +23,6 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
-    # Optional: resource limits
     deploy:
       resources:
         limits:
@@ -41,8 +38,8 @@ services:
       minio-hosted:
         condition: service_healthy
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-your_access_key}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-your_secret_key}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     entrypoint: |
       /bin/sh -c '
       echo "Configuring MinIO alias...";

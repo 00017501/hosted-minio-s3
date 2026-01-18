@@ -1,0 +1,91 @@
+name: "eld_xy_minio_hosted"
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio-service
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Console UI
+    environment:
+      # Change these in production!
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-your_access_key}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-your_secret_key}
+      # Set this to your domain for console redirect
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_URL:-http://localhost:9001}
+      # Optional: Set server URL for proper presigned URLs
+      MINIO_SERVER_URL: ${MINIO_SERVER_URL:-http://localhost:9000}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    # Optional: resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  # One-time bucket initialization
+  createbuckets:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-your_access_key}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-your_secret_key}
+    entrypoint: |
+      /bin/sh -c '
+      echo "Configuring MinIO alias...";
+      mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+
+      echo "Creating main bucket...";
+      mc mb myminio/eld-files --ignore-existing;
+
+      echo "Creating folder structure...";
+      echo "placeholder" | mc pipe myminio/eld-files/static/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/media/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/signatures/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/documents/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/avatars/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/inspections/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/accidents/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/temp/.gitkeep;
+
+      echo "Setting bucket policy for public read on static files...";
+      cat <<EOF > /tmp/policy.json
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {"AWS": ["*"]},
+            "Action": ["s3:GetObject"],
+            "Resource": [
+              "arn:aws:s3:::eld-files/static/*"
+            ]
+          }
+        ]
+      }
+      EOF
+
+      mc anonymous set-json /tmp/policy.json myminio/eld-files;
+
+      echo "Enabling bucket versioning...";
+      mc version enable myminio/eld-files;
+
+      echo "MinIO initialization complete!";
+      '
+
+volumes:
+  minio_data:
+    name: eld_minio_hosted_data

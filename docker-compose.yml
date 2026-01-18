@@ -51,12 +51,7 @@ services:
       echo "Creating folder structure...";
       echo "placeholder" | mc pipe myminio/eld-files/static/.gitkeep;
       echo "placeholder" | mc pipe myminio/eld-files/media/.gitkeep;
-      echo "placeholder" | mc pipe myminio/eld-files/uploads/signatures/.gitkeep;
-      echo "placeholder" | mc pipe myminio/eld-files/uploads/documents/.gitkeep;
-      echo "placeholder" | mc pipe myminio/eld-files/uploads/avatars/.gitkeep;
-      echo "placeholder" | mc pipe myminio/eld-files/uploads/inspections/.gitkeep;
-      echo "placeholder" | mc pipe myminio/eld-files/uploads/accidents/.gitkeep;
-      echo "placeholder" | mc pipe myminio/eld-files/uploads/temp/.gitkeep;
+      echo "placeholder" | mc pipe myminio/eld-files/uploads/.gitkeep;
 
       echo "Setting bucket policy for public read on all the files...";
       cat <<EOF > /tmp/policy.json
